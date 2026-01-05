@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { updateMe } from '@/api/users.api';
 import { getInterests } from '@/api/interests.api';
-import { getUploadUrl, uploadToPresignedUrl } from '@/api/storage.api';
+import { uploadFile } from '@/api/storage.api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ import { ApiClientError } from '@/api/client';
 import { Avatar } from '@/components/ui/avatar';
 import { ArrowLeft, Loader2, Upload, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getFullStorageUrl } from '@/lib/storage';
 import type { UpdateProfilePayload } from '@/types';
 
 export function EditProfilePage() {
@@ -129,16 +130,15 @@ export function EditProfilePage() {
         setUploadProgress(0);
         setUploadError(null);
 
-        const { uploadUrl, publicUrl } = await getUploadUrl({
-          entity: 'users',
-          entityId: user.id,
-          field: 'avatar',
-          filename: `avatar-${Date.now()}.${avatarFile.name.split('.').pop()}`,
-          contentType: avatarFile.type,
-        });
+        const { path } = await uploadFile(
+          avatarFile,
+          'users',
+          user.id,
+          'avatar',
+          setUploadProgress
+        );
 
-        await uploadToPresignedUrl(uploadUrl, avatarFile, setUploadProgress);
-        finalAvatarUrl = publicUrl;
+        finalAvatarUrl = path;
         setUploadProgress(null);
       } catch (error) {
         setUploadError(error instanceof Error ? error.message : 'Failed to upload avatar');
@@ -246,7 +246,7 @@ export function EditProfilePage() {
                 ) : form.avatarUrl ? (
                   <div className="relative">
                     <Avatar
-                      src={form.avatarUrl}
+                      src={getFullStorageUrl(form.avatarUrl)}
                       firstName={form.firstName || 'U'}
                       lastName={form.lastName || 'U'}
                       seed={user?.id}

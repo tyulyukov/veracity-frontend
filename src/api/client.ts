@@ -1,6 +1,6 @@
 import type { ApiError } from '@/types';
 
-const API_BASE_URL = 'http://localhost:7007/api/v1';
+export const API_BASE_URL = 'http://localhost:7007/api/v1';
 
 export class ApiClientError extends Error {
   statusCode: number;

@@ -1,5 +1,5 @@
 import { apiGet, apiPatch } from './client';
-import type { User, UpdateProfilePayload, UsersQueryParams, PaginatedUsersResponse } from '@/types';
+import type { User, OtherUser, UpdateProfilePayload, UsersQueryParams, PaginatedUsersResponse } from '@/types';
 
 export async function getMe(): Promise<User> {
   return apiGet<User>('/users/me');
@@ -27,5 +27,9 @@ export async function getUsers(params?: UsersQueryParams): Promise<PaginatedUser
 
   const query = searchParams.toString();
   return apiGet<PaginatedUsersResponse>(`/users${query ? `?${query}` : ''}`);
+}
+
+export async function getUserById(userId: string): Promise<OtherUser> {
+  return apiGet<OtherUser>(`/users/${userId}`);
 }
 

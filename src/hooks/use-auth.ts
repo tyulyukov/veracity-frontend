@@ -26,12 +26,15 @@ export function useLogin() {
   const navigate = useNavigate();
 
   return useMutation({
+    mutationKey: ['login'],
     mutationFn: (payload: LoginPayload) => authApi.login(payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       const user = await usersApi.getMe();
       if (user.status === 'pending') {
         navigate('/pending-approval');
+      } else if (user.status === 'inactive') {
+        navigate('/account-inactive');
       } else {
         navigate('/app');
       }

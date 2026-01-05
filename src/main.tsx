@@ -21,7 +21,10 @@ const queryClient = new QueryClient({
     onError: (error, query) => handleUnauthorized(error, query.queryKey),
   }),
   mutationCache: new MutationCache({
-    onError: (error) => handleUnauthorized(error),
+    onError: (error, _variables, _context, mutation) => {
+      if (mutation.options.mutationKey?.[0] === 'login') return;
+      handleUnauthorized(error);
+    },
   }),
   defaultOptions: {
     queries: {

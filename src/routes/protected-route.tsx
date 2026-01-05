@@ -38,6 +38,10 @@ export function ActiveUserRoute() {
     return <Navigate to="/pending-approval" replace />;
   }
 
+  if (user.status === 'inactive') {
+    return <Navigate to="/account-inactive" replace />;
+  }
+
   if (user.status !== 'active') {
     return <Navigate to="/login" replace />;
   }
@@ -60,7 +64,12 @@ export function PublicOnlyRoute() {
     if (user.status === 'pending') {
       return <Navigate to="/pending-approval" replace />;
     }
-    return <Navigate to="/app" replace />;
+    if (user.status === 'inactive') {
+      return <Navigate to="/account-inactive" replace />;
+    }
+    if (user.status === 'active') {
+      return <Navigate to="/app" replace />;
+    }
   }
 
   return <Outlet />;

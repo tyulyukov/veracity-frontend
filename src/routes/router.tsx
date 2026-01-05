@@ -7,6 +7,7 @@ import { RegisterPage } from '@/pages/auth/register';
 import { ForgotPasswordPage } from '@/pages/auth/forgot-password';
 import { ResetPasswordPage } from '@/pages/auth/reset-password';
 import { PendingApprovalPage } from '@/pages/auth/pending-approval';
+import { AccountInactivePage } from '@/pages/auth/account-inactive';
 import { FeedPage } from '@/pages/platform/feed';
 import { MembersPage } from '@/pages/platform/members';
 import { MemberProfilePage } from '@/pages/platform/member-profile';
@@ -45,6 +46,10 @@ export const router = createBrowserRouter([
       {
         path: 'pending-approval',
         element: <PendingApprovalPage />,
+      },
+      {
+        path: 'account-inactive',
+        element: <AccountInactivePage />,
       },
     ],
   },

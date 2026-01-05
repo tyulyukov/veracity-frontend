@@ -1,22 +1,18 @@
 import { useParams, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { getUsers } from '@/api/users.api';
+import { getUserById } from '@/api/users.api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { ArrowLeft, Calendar, Briefcase, Loader2 } from 'lucide-react';
+import { getFullStorageUrl } from '@/lib/storage';
 
 export function MemberProfilePage() {
   const { memberId } = useParams<{ memberId: string }>();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['member', memberId],
-    queryFn: async () => {
-      const result = await getUsers({ limit: 100 });
-      const member = result.users.find((u) => u.id === memberId);
-      if (!member) throw new Error('Member not found');
-      return member;
-    },
+    queryFn: () => getUserById(memberId!),
     enabled: !!memberId,
   });
 
@@ -67,7 +63,7 @@ export function MemberProfilePage() {
         <div className="px-8 pb-8">
           <div className="flex flex-col sm:flex-row sm:items-end gap-6 -mt-12 mb-8">
             <Avatar
-              src={data.avatarUrl}
+              src={getFullStorageUrl(data.avatarUrl)}
               firstName={data.firstName}
               lastName={data.lastName}
               seed={data.id}

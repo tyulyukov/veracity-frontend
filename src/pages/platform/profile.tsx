@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { Edit, Mail, Calendar, Briefcase } from 'lucide-react';
+import { getFullStorageUrl } from '@/lib/storage';
 
 export function ProfilePage() {
   const { user } = useAuthStore();
@@ -23,7 +24,7 @@ export function ProfilePage() {
         <div className="px-8 pb-8">
           <div className="flex flex-col sm:flex-row sm:items-end gap-6 -mt-12 mb-8">
             <Avatar
-              src={user.avatarUrl}
+              src={getFullStorageUrl(user.avatarUrl)}
               firstName={user.firstName}
               lastName={user.lastName}
               seed={user.id}

@@ -84,16 +84,9 @@ export interface ApiError {
 export type StorageEntity = 'users';
 export type StorageField = 'avatar';
 
-export interface UploadUrlRequest {
-  entity: StorageEntity;
-  entityId: string;
-  field: StorageField;
-  filename: string;
-  contentType: string;
+export interface UploadFileResponse {
+  path: string;
 }
 
-export interface UploadUrlResponse {
-  uploadUrl: string;
-  publicUrl: string;
-}
+export const STORAGE_BASE_URL = 'https://storage.veracity.tyulyukov.com';
 

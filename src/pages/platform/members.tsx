@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { Loader2, Users, X, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getFullStorageUrl } from '@/lib/storage';
 import type { OtherUser } from '@/types';
 
 export function MembersPage() {
@@ -167,7 +168,7 @@ function MemberCard({ user }: { user: OtherUser }) {
     >
       <div className="flex items-start gap-4 mb-4">
         <Avatar
-          src={user.avatarUrl}
+          src={getFullStorageUrl(user.avatarUrl)}
           firstName={user.firstName}
           lastName={user.lastName}
           seed={user.id}
