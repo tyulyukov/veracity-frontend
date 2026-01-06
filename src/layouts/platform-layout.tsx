@@ -10,9 +10,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar } from '@/components/ui/avatar';
+import { getFullStorageUrl } from '@/lib/storage';
 import { Home, Users, User, LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { NotificationsDropdown } from '@/components/notifications-dropdown';
 
 const navItems = [
   { path: '/app', icon: Home, label: 'Feed' },
@@ -84,12 +86,15 @@ export function PlatformLayout() {
 
           <div className="flex-1 hidden lg:block" />
 
-          <DropdownMenu>
+          <div className="flex items-center gap-2">
+            <NotificationsDropdown />
+
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
                 {user && (
                   <Avatar
-                    src={user.avatarUrl}
+                    src={getFullStorageUrl(user.avatarUrl)}
                     firstName={user.firstName}
                     lastName={user.lastName}
                     seed={user.id}
@@ -122,6 +127,7 @@ export function PlatformLayout() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </header>
 
         <main className="flex-1 p-6">

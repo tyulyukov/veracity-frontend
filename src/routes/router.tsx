@@ -13,6 +13,7 @@ import { MembersPage } from '@/pages/platform/members';
 import { MemberProfilePage } from '@/pages/platform/member-profile';
 import { ProfilePage } from '@/pages/platform/profile';
 import { EditProfilePage } from '@/pages/platform/edit-profile';
+import { ConnectionsPage } from '@/pages/platform/connections';
 
 export const router = createBrowserRouter([
   {
@@ -73,12 +74,20 @@ export const router = createBrowserRouter([
             element: <MemberProfilePage />,
           },
           {
+            path: 'members/:memberId/connections',
+            element: <ConnectionsPage />,
+          },
+          {
             path: 'profile',
             element: <ProfilePage />,
           },
           {
             path: 'profile/edit',
             element: <EditProfilePage />,
+          },
+          {
+            path: 'profile/connections',
+            element: <ConnectionsPage />,
           },
         ],
       },

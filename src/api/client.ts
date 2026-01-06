@@ -28,7 +28,12 @@ async function handleResponse<T>(response: Response): Promise<T> {
     return undefined as T;
   }
 
-  return response.json();
+  const text = await response.text();
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text);
 }
 
 export async function apiGet<T>(endpoint: string): Promise<T> {
@@ -62,6 +67,14 @@ export async function apiPatch<T, B = unknown>(endpoint: string, body?: B): Prom
       'Content-Type': 'application/json',
     },
     body: body ? JSON.stringify(body) : undefined,
+  });
+  return handleResponse<T>(response);
+}
+
+export async function apiDelete<T>(endpoint: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'DELETE',
+    credentials: 'include',
   });
   return handleResponse<T>(response);
 }

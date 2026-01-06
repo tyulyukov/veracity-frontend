@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
-import { Edit, Mail, Calendar, Briefcase } from 'lucide-react';
+import { Edit, Mail, Calendar, Briefcase, Users } from 'lucide-react';
 import { getFullStorageUrl } from '@/lib/storage';
 
 export function ProfilePage() {
@@ -57,6 +57,15 @@ export function ProfilePage() {
           )}
 
           <div className="grid sm:grid-cols-2 gap-6 mb-8">
+            <Link
+              to="/app/profile/connections"
+              className="flex items-center gap-3 text-sm hover:text-primary transition-colors"
+            >
+              <Users className="w-5 h-5 text-muted-foreground" />
+              <span className="text-foreground hover:text-primary">
+                {user.totalConnections} {user.totalConnections === 1 ? 'connection' : 'connections'}
+              </span>
+            </Link>
             <div className="flex items-center gap-3 text-sm">
               <Mail className="w-5 h-5 text-muted-foreground" />
               <span className="text-foreground">{user.email}</span>

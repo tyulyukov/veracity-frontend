@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { getUsers } from '@/api/users.api';
@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
-import { Loader2, Users, X, Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Users, X, Search, Briefcase } from 'lucide-react';
+import { ConnectionButton } from '@/components/connection-button';
 import { cn } from '@/lib/utils';
 import { getFullStorageUrl } from '@/lib/storage';
 import type { OtherUser } from '@/types';
@@ -16,6 +18,11 @@ export function MembersPage() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [positionQuery, setPositionQuery] = useState('');
+  const [debouncedPosition, setDebouncedPosition] = useState('');
+  const [connectionFilter, setConnectionFilter] = useState<'all' | 'sent_requests' | 'received_requests' | 'connected'>(
+    'all'
+  );
 
   const { data: interests = [] } = useQuery({
     queryKey: ['interests'],
@@ -29,25 +36,29 @@ export function MembersPage() {
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery({
-    queryKey: ['users', selectedInterests, debouncedSearch],
+    queryKey: ['users', selectedInterests, debouncedSearch, debouncedPosition, connectionFilter],
     queryFn: ({ pageParam }) =>
       getUsers({
         cursor: pageParam,
         limit: 12,
         interestIds: selectedInterests.length > 0 ? selectedInterests : undefined,
         search: debouncedSearch || undefined,
+        position: debouncedPosition || undefined,
+        connectionFilter: connectionFilter === 'all' ? undefined : connectionFilter,
       }),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: undefined as string | undefined,
   });
 
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    const timeout = setTimeout(() => {
-      setDebouncedSearch(value);
-    }, 300);
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(searchQuery), 300);
     return () => clearTimeout(timeout);
-  };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedPosition(positionQuery), 300);
+    return () => clearTimeout(timeout);
+  }, [positionQuery]);
 
   const toggleInterest = (id: string) => {
     setSelectedInterests((prev) =>
@@ -59,9 +70,12 @@ export function MembersPage() {
     setSelectedInterests([]);
     setSearchQuery('');
     setDebouncedSearch('');
+    setPositionQuery('');
+    setDebouncedPosition('');
+    setConnectionFilter('all');
   };
 
-  const hasFilters = selectedInterests.length > 0 || debouncedSearch;
+  const hasFilters = selectedInterests.length > 0 || debouncedSearch || debouncedPosition || connectionFilter !== 'all';
   const allUsers = data?.pages.flatMap((page) => page.users) ?? [];
 
   return (
@@ -79,9 +93,32 @@ export function MembersPage() {
           <Input
             placeholder="Search by name..."
             value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="relative">
+            <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Filter by position..."
+              value={positionQuery}
+              onChange={(e) => setPositionQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={connectionFilter} onValueChange={(value) => setConnectionFilter(value as typeof connectionFilter)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Connection status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All network members</SelectItem>
+              <SelectItem value="connected">Connected</SelectItem>
+              <SelectItem value="sent_requests">Requests sent</SelectItem>
+              <SelectItem value="received_requests">Requests received</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div>
@@ -161,26 +198,44 @@ export function MembersPage() {
 }
 
 function MemberCard({ user }: { user: OtherUser }) {
+  const status = user.isConnected
+    ? { label: 'Connected', className: 'bg-emerald-500/10 text-emerald-400' }
+    : user.hasIncomingRequest
+      ? { label: 'Respond', className: 'bg-blue-500/10 text-blue-400' }
+      : user.hasOutgoingRequest
+        ? { label: 'Pending', className: 'bg-amber-500/10 text-amber-400' }
+        : null;
+
   return (
-    <Link
-      to={`/app/members/${user.id}`}
-      className="block bg-card border border-border rounded-xl p-6 hover:border-primary/30 transition-colors"
-    >
+    <div className="bg-card border border-border rounded-xl p-6 hover:border-primary/30 transition-colors">
       <div className="flex items-start gap-4 mb-4">
-        <Avatar
-          src={getFullStorageUrl(user.avatarUrl)}
-          firstName={user.firstName}
-          lastName={user.lastName}
-          seed={user.id}
-          size="lg"
-        />
+        <Link to={`/app/members/${user.id}`} className="shrink-0">
+          <Avatar
+            src={getFullStorageUrl(user.avatarUrl)}
+            firstName={user.firstName}
+            lastName={user.lastName}
+            seed={user.id}
+            size="lg"
+          />
+        </Link>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate">
-            {user.firstName} {user.lastName}
-          </h3>
-          {user.position && (
-            <p className="text-sm text-muted-foreground truncate">{user.position}</p>
-          )}
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <Link to={`/app/members/${user.id}`}>
+                <h3 className="font-semibold text-foreground truncate">
+                  {user.firstName} {user.lastName}
+                </h3>
+              </Link>
+              {user.position && (
+                <p className="text-sm text-muted-foreground truncate">{user.position}</p>
+              )}
+            </div>
+            {status && (
+              <Badge variant="secondary" className={cn('text-xs', status.className)}>
+                {status.label}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
@@ -204,6 +259,16 @@ function MemberCard({ user }: { user: OtherUser }) {
           )}
         </div>
       )}
-    </Link>
+
+      <div className="mt-4">
+        <ConnectionButton
+          userId={user.id}
+          isConnected={user.isConnected}
+          hasOutgoingRequest={user.hasOutgoingRequest}
+          hasIncomingRequest={user.hasIncomingRequest}
+          className="w-full"
+        />
+      </div>
+    </div>
   );
 }

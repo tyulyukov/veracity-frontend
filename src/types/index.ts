@@ -17,6 +17,7 @@ export interface User {
   createdAt: string;
   lastActivityAt: string | null;
   interests: Interest[];
+  totalConnections: number;
 }
 
 export interface OtherUser {
@@ -31,6 +32,14 @@ export interface OtherUser {
   createdAt: string;
   lastActivityAt: string | null;
   interests: Interest[];
+  isConnected: boolean;
+  hasOutgoingRequest: boolean;
+  hasIncomingRequest: boolean;
+}
+
+export interface OtherUserDetail extends OtherUser {
+  contactInfo: Record<string, string> | null;
+  totalConnections: number;
 }
 
 export type UserStatus = 'pending' | 'active' | 'inactive' | 'banned';
@@ -68,10 +77,26 @@ export interface UsersQueryParams {
   limit?: number;
   interestIds?: string[];
   search?: string;
+  position?: string;
+  connectionFilter?: 'all' | 'sent_requests' | 'received_requests' | 'connected';
 }
 
 export interface PaginatedUsersResponse {
   users: OtherUser[];
+  nextCursor: string | null;
+}
+
+export interface ConnectedUser extends OtherUser {
+  connectionCreatedAt: string;
+}
+
+export interface ConnectionsQueryParams {
+  cursor?: string;
+  limit?: number;
+}
+
+export interface PaginatedConnectionsResponse {
+  users: ConnectedUser[];
   nextCursor: string | null;
 }
 

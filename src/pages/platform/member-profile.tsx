@@ -2,10 +2,11 @@ import { useParams, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { getUserById } from '@/api/users.api';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
-import { ArrowLeft, Calendar, Briefcase, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Briefcase, Loader2, Lock, Users } from 'lucide-react';
 import { getFullStorageUrl } from '@/lib/storage';
+import { ConnectionButton } from '@/components/connection-button';
+import { cn } from '@/lib/utils';
 
 export function MemberProfilePage() {
   const { memberId } = useParams<{ memberId: string }>();
@@ -47,6 +48,14 @@ export function MemberProfilePage() {
     year: 'numeric',
   });
 
+  const status = data.isConnected
+    ? { label: 'Connected', className: 'bg-emerald-500/10 text-emerald-400' }
+    : data.hasIncomingRequest
+      ? { label: 'Respond', className: 'bg-blue-500/10 text-blue-400' }
+      : data.hasOutgoingRequest
+        ? { label: 'Pending', className: 'bg-amber-500/10 text-amber-400' }
+        : { label: 'Not connected', className: 'bg-muted text-muted-foreground' };
+
   return (
     <div className="max-w-3xl mx-auto">
       <Link
@@ -76,9 +85,18 @@ export function MemberProfilePage() {
                 {data.firstName} {data.lastName}
               </h1>
               {data.position && <p className="text-muted-foreground">{data.position}</p>}
+              <Badge variant="secondary" className={cn('mt-2 inline-flex', status.className)}>
+                {status.label}
+              </Badge>
             </div>
 
-            <Button disabled>Connect (Coming Soon)</Button>
+            <ConnectionButton
+              userId={data.id}
+              isConnected={data.isConnected}
+              hasOutgoingRequest={data.hasOutgoingRequest}
+              hasIncomingRequest={data.hasIncomingRequest}
+              className="flex-shrink-0"
+            />
           </div>
 
           {data.shortDescription && (
@@ -89,6 +107,15 @@ export function MemberProfilePage() {
           )}
 
           <div className="grid sm:grid-cols-2 gap-6 mb-8">
+            <Link
+              to={`/app/members/${data.id}/connections`}
+              className="flex items-center gap-3 text-sm hover:text-primary transition-colors"
+            >
+              <Users className="w-5 h-5 text-muted-foreground" />
+              <span className="text-foreground hover:text-primary">
+                {data.totalConnections} {data.totalConnections === 1 ? 'connection' : 'connections'}
+              </span>
+            </Link>
             <div className="flex items-center gap-3 text-sm">
               <Calendar className="w-5 h-5 text-muted-foreground" />
               <span className="text-foreground">Joined {joinDate}</span>
@@ -98,6 +125,31 @@ export function MemberProfilePage() {
                 <Briefcase className="w-5 h-5 text-muted-foreground" />
                 <span className="text-foreground">{data.position}</span>
               </div>
+            )}
+          </div>
+
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-foreground">Contact Information</h3>
+              {!data.isConnected && <Lock className="w-4 h-4 text-muted-foreground" />}
+            </div>
+            {data.isConnected ? (
+              data.contactInfo && Object.keys(data.contactInfo).length > 0 ? (
+                <div className="grid gap-2">
+                  {Object.entries(data.contactInfo).map(([key, value]) => (
+                    <div key={key} className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground capitalize">{key}:</span>
+                      <span className="text-foreground">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No contact information provided.</p>
+              )
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Contact details are visible once you are connected.
+              </p>
             )}
           </div>
 
