@@ -106,12 +106,94 @@ export interface ApiError {
   statusCode: number;
 }
 
-export type StorageEntity = 'users';
-export type StorageField = 'avatar';
+export type StorageEntity = 'users' | 'events';
+export type StorageField = 'avatar' | 'event_image';
 
 export interface UploadFileResponse {
   path: string;
 }
 
 export const STORAGE_BASE_URL = 'https://storage.veracity.tyulyukov.com';
+
+export interface EventSpeaker {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  role: UserRole;
+}
+
+export interface EventListItem {
+  id: string;
+  name: string;
+  isOnline: boolean;
+  eventDate: string;
+  location: string | null;
+  link: string | null;
+  imageUrls: string[];
+  limitParticipants: number | null;
+  participantCount: number;
+  speaker?: EventSpeaker;
+  isRegistered?: boolean;
+}
+
+export interface EventResponse extends EventListItem {
+  description: string | null;
+  tags: string[];
+  createdAt: string;
+}
+
+export interface EventParticipant {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  role: UserRole;
+  comment: string | null;
+  registrationCreatedAt: string;
+}
+
+export interface CreateEventPayload {
+  name: string;
+  isOnline: boolean;
+  eventDate: string;
+  location?: string;
+  link?: string;
+  description?: string;
+  imageUrls?: string[];
+  tags?: string[];
+  limitParticipants?: number;
+}
+
+export interface UpdateEventPayload {
+  name?: string;
+  isOnline?: boolean;
+  eventDate?: string;
+  location?: string;
+  link?: string;
+  description?: string;
+  imageUrls?: string[];
+  tags?: string[];
+  limitParticipants?: number;
+}
+
+export interface RegisterEventPayload {
+  comment?: string;
+}
+
+export interface EventsQueryParams {
+  cursor?: string;
+  limit?: number;
+  filter?: 'all' | 'registered';
+}
+
+export interface PaginatedEventsResponse {
+  events: EventListItem[];
+  nextCursor: string | null;
+}
+
+export interface PaginatedParticipantsResponse {
+  participants: EventParticipant[];
+  nextCursor: string | null;
+}
 

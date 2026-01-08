@@ -1,6 +1,8 @@
-import { useParams, Link } from 'react-router';
+import { useParams, Link, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { getUserById } from '@/api/users.api';
+import { useAuthStore } from '@/stores/auth.store';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { ArrowLeft, Calendar, Briefcase, Loader2, Lock, Users } from 'lucide-react';
@@ -10,12 +12,20 @@ import { cn } from '@/lib/utils';
 
 export function MemberProfilePage() {
   const { memberId } = useParams<{ memberId: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['member', memberId],
     queryFn: () => getUserById(memberId!),
     enabled: !!memberId,
   });
+
+  useEffect(() => {
+    if (user && memberId === user.id) {
+      navigate('/app/profile', { replace: true });
+    }
+  }, [user, memberId, navigate]);
 
   if (isLoading) {
     return (

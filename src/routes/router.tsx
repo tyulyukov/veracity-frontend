@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router';
 import { ProtectedRoute, ActiveUserRoute, PublicOnlyRoute } from './protected-route';
 import { PlatformLayout } from '@/layouts/platform-layout';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { LandingPage } from '@/pages/landing';
 import { LoginPage } from '@/pages/auth/login';
 import { RegisterPage } from '@/pages/auth/register';
@@ -14,14 +15,22 @@ import { MemberProfilePage } from '@/pages/platform/member-profile';
 import { ProfilePage } from '@/pages/platform/profile';
 import { EditProfilePage } from '@/pages/platform/edit-profile';
 import { ConnectionsPage } from '@/pages/platform/connections';
+import { EventsPage } from '@/pages/platform/events';
+import { EventDetailPage } from '@/pages/platform/event-detail';
+import { CreateEventPage } from '@/pages/platform/create-event';
+import { AddEventImagesPage } from '@/pages/platform/add-event-images';
+import { EditEventPage } from '@/pages/platform/edit-event';
+import { EventParticipantsPage } from '@/pages/platform/event-participants';
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <LandingPage />,
+    errorElement: <ErrorBoundary />,
   },
   {
     element: <PublicOnlyRoute />,
+    errorElement: <ErrorBoundary />,
     children: [
       {
         path: 'login',
@@ -43,6 +52,7 @@ export const router = createBrowserRouter([
   },
   {
     element: <ProtectedRoute />,
+    errorElement: <ErrorBoundary />,
     children: [
       {
         path: 'pending-approval',
@@ -57,6 +67,7 @@ export const router = createBrowserRouter([
   {
     path: 'app',
     element: <ActiveUserRoute />,
+    errorElement: <ErrorBoundary />,
     children: [
       {
         element: <PlatformLayout />,
@@ -88,6 +99,30 @@ export const router = createBrowserRouter([
           {
             path: 'profile/connections',
             element: <ConnectionsPage />,
+          },
+          {
+            path: 'events',
+            element: <EventsPage />,
+          },
+          {
+            path: 'events/:eventId',
+            element: <EventDetailPage />,
+          },
+          {
+            path: 'my-events/create',
+            element: <CreateEventPage />,
+          },
+          {
+            path: 'my-events/:eventId/add-images',
+            element: <AddEventImagesPage />,
+          },
+          {
+            path: 'my-events/:eventId/edit',
+            element: <EditEventPage />,
+          },
+          {
+            path: 'my-events/:eventId/participants',
+            element: <EventParticipantsPage />,
           },
         ],
       },

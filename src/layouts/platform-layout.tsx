@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar } from '@/components/ui/avatar';
 import { getFullStorageUrl } from '@/lib/storage';
-import { Home, Users, User, LogOut, Menu, X } from 'lucide-react';
+import { Home, Users, User, LogOut, Menu, X, Calendar } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { NotificationsDropdown } from '@/components/notifications-dropdown';
@@ -19,6 +19,7 @@ import { NotificationsDropdown } from '@/components/notifications-dropdown';
 const navItems = [
   { path: '/app', icon: Home, label: 'Feed' },
   { path: '/app/members', icon: Users, label: 'Members' },
+  { path: '/app/events', icon: Calendar, label: 'Events' },
 ];
 
 export function PlatformLayout() {

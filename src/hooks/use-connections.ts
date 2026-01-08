@@ -17,8 +17,12 @@ export function useSendConnectionRequest() {
       queryClient.invalidateQueries({ queryKey: ['member'] });
       queryClient.invalidateQueries({ queryKey: ['connections'] });
     },
-    onError: () => {
-      toast.error('Failed to send connection request');
+    onError: (error: unknown) => {
+      const errorMessage =
+        error instanceof Error && 'message' in error
+          ? error.message
+          : 'Failed to send connection request';
+      toast.error(errorMessage);
     },
   });
 }
@@ -34,8 +38,12 @@ export function useDeleteConnectionRequest() {
       queryClient.invalidateQueries({ queryKey: ['member'] });
       queryClient.invalidateQueries({ queryKey: ['connections'] });
     },
-    onError: () => {
-      toast.error('Failed to delete connection request');
+    onError: (error: unknown) => {
+      const errorMessage =
+        error instanceof Error && 'message' in error
+          ? error.message
+          : 'Failed to delete connection request';
+      toast.error(errorMessage);
     },
   });
 }
@@ -52,9 +60,12 @@ export function useDeleteConnection() {
       queryClient.invalidateQueries({ queryKey: ['connections'] });
       queryClient.invalidateQueries({ queryKey: ['pending-requests'] });
     },
-    onError: (error) => {
-      console.error('Delete connection error:', error);
-      toast.error('Failed to remove connection');
+    onError: (error: unknown) => {
+      const errorMessage =
+        error instanceof Error && 'message' in error
+          ? error.message
+          : 'Failed to remove connection';
+      toast.error(errorMessage);
     },
   });
 }
@@ -72,8 +83,12 @@ export function useRespondToConnection() {
       queryClient.invalidateQueries({ queryKey: ['pending-requests'] });
       queryClient.invalidateQueries({ queryKey: ['connections'] });
     },
-    onError: () => {
-      toast.error('Failed to respond to connection request');
+    onError: (error: unknown) => {
+      const errorMessage =
+        error instanceof Error && 'message' in error
+          ? error.message
+          : 'Failed to respond to connection request';
+      toast.error(errorMessage);
     },
   });
 }
