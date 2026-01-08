@@ -4,6 +4,7 @@ import { ArrowLeft, Users, Loader2 } from 'lucide-react';
 import { useMyEvent, useEventParticipants } from '@/hooks/use-events';
 import { useAuthStore } from '@/stores/auth.store';
 import { getFullStorageUrl } from '@/lib/storage';
+import { formatRole } from '@/lib/utils';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -114,7 +115,7 @@ export function EventParticipantsPage() {
                           {participant.firstName} {participant.lastName}
                         </Link>
                         <Badge variant="secondary" className="text-xs">
-                          {participant.role}
+                          {formatRole(participant.role)}
                         </Badge>
                       </div>
 

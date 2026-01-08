@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { useEvent, useDeleteEvent } from '@/hooks/use-events';
 import { useAuthStore } from '@/stores/auth.store';
 import { getFullStorageUrl } from '@/lib/storage';
+import { formatRole } from '@/lib/utils';
 import { HtmlContent } from '@/components/html-content';
 import { EventRegistrationButton } from '@/components/event-registration-button';
 import { ImageGallery } from '@/components/image-gallery';
@@ -162,7 +163,7 @@ export function EventDetailPage() {
                   <p className="font-semibold text-foreground">
                     {data.speaker.firstName} {data.speaker.lastName}
                   </p>
-                  <p className="text-xs text-muted-foreground capitalize">{data.speaker.role}</p>
+                  <p className="text-xs text-muted-foreground">{formatRole(data.speaker.role)}</p>
                 </div>
               </Link>
             )}

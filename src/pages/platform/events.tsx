@@ -111,10 +111,10 @@ export function EventsPage() {
             type="button"
             onClick={() => setActiveFilter('all')}
             className={cn(
-              'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+              'px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer',
               activeFilter === 'all'
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-muted/20 text-muted-foreground hover:bg-muted/30',
+                : 'bg-muted/20 text-muted-foreground hover:bg-muted/30 hover:text-foreground',
             )}
           >
             All Events
@@ -123,10 +123,10 @@ export function EventsPage() {
             type="button"
             onClick={() => setActiveFilter('registered')}
             className={cn(
-              'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+              'px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer',
               activeFilter === 'registered'
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-muted/20 text-muted-foreground hover:bg-muted/30',
+                : 'bg-muted/20 text-muted-foreground hover:bg-muted/30 hover:text-foreground',
             )}
           >
             My Registrations
@@ -136,10 +136,10 @@ export function EventsPage() {
               type="button"
               onClick={() => setActiveFilter('my-events')}
               className={cn(
-                'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                'px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer',
                 activeFilter === 'my-events'
                   ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted/20 text-muted-foreground hover:bg-muted/30',
+                  : 'bg-muted/20 text-muted-foreground hover:bg-muted/30 hover:text-foreground',
               )}
             >
               My Events
