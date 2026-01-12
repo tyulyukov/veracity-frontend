@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router';
 import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
-import { useUserPosts, useUpdatePost, useDeletePost, useLikePost, useUnlikePost } from '@/hooks/use-posts';
+import { useMyPosts, useUpdatePost, useDeletePost, useLikePost, useUnlikePost } from '@/hooks/use-posts';
 import { CreatePostForm } from '@/components/create-post-form';
 import { ImageGallery } from '@/components/image-gallery';
 import { Button } from '@/components/ui/button';
@@ -28,12 +28,12 @@ import { Edit, Mail, Calendar, Briefcase, Users, Heart, MessageCircle, Loader2, 
 import { getFullStorageUrl } from '@/lib/storage';
 import { uploadFile } from '@/api/storage.api';
 import { toast } from 'sonner';
-import type { Post, UpdatePostPayload } from '@/types';
+import type { MyPost, UpdatePostPayload, User } from '@/types';
 import { cn } from '@/lib/utils';
 
 export function ProfilePage() {
   const { user } = useAuthStore();
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useUserPosts(user?.id ?? '');
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMyPosts();
   const observerTarget = useRef<HTMLDivElement>(null);
 
   const allPosts = data?.pages.flatMap((page) => page.posts) ?? [];
@@ -182,7 +182,7 @@ export function ProfilePage() {
         ) : (
           <>
             {allPosts.map((post) => (
-              <MyPostCard key={post.id} post={post} />
+              <MyPostCard key={post.id} post={post} user={user} />
             ))}
 
             <div ref={observerTarget} className="py-4">
@@ -206,10 +206,11 @@ export function ProfilePage() {
 }
 
 interface MyPostCardProps {
-  post: Post;
+  post: MyPost;
+  user: User;
 }
 
-function MyPostCard({ post }: MyPostCardProps) {
+function MyPostCard({ post, user }: MyPostCardProps) {
   const navigate = useNavigate();
   const updateMutation = useUpdatePost();
   const deleteMutation = useDeletePost();
@@ -306,15 +307,15 @@ function MyPostCard({ post }: MyPostCardProps) {
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <Avatar
-            src={getFullStorageUrl(post.author.avatarUrl)}
-            firstName={post.author.firstName}
-            lastName={post.author.lastName}
-            seed={post.author.id}
+            src={getFullStorageUrl(user.avatarUrl)}
+            firstName={user.firstName}
+            lastName={user.lastName}
+            seed={user.id}
             size="md"
           />
           <div>
             <p className="font-semibold text-foreground">
-              {post.author.firstName} {post.author.lastName}
+              {user.firstName} {user.lastName}
             </p>
             <p className="text-xs text-muted-foreground">{timeAgo}</p>
           </div>

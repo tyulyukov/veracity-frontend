@@ -222,6 +222,7 @@ export interface MyPost {
   imageUrls: string[];
   likeCount: number;
   commentCount: number;
+  isLikedByCurrentUser: boolean;
   createdAt: string;
   updatedAt: string;
 }
