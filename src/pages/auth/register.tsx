@@ -1,17 +1,25 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
-import { useRegister } from '@/hooks/use-auth';
+import { useState, useRef } from 'react';
+import { Link, useNavigate } from 'react-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getInterests } from '@/api/interests.api';
+import { register as registerApi } from '@/api/auth.api';
+import { uploadFile } from '@/api/storage.api';
+import { updateMe } from '@/api/users.api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { AvatarCropModal } from '@/components/avatar-crop-modal';
 import { ApiClientError } from '@/api/client';
-import { ArrowLeft, Loader2, Check } from 'lucide-react';
+import { ArrowLeft, Loader2, Check, Upload, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { RegisterPayload } from '@/types';
 
 export function RegisterPage() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [form, setForm] = useState({
     email: '',
     password: '',
@@ -21,7 +29,37 @@ export function RegisterPage() {
     shortDescription: '',
   });
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const register = useRegister();
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [originalImageSrc, setOriginalImageSrc] = useState<string>('');
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const register = useMutation({
+    mutationFn: async (payload: RegisterPayload & { avatarFile?: File | null }) => {
+      const { avatarFile: file, ...registerPayload } = payload;
+
+      const { userId } = await registerApi(registerPayload);
+
+      if (file) {
+        setUploadProgress(0);
+        const { path } = await uploadFile(file, 'users', userId, 'avatar', setUploadProgress);
+        setUploadProgress(null);
+
+        await updateMe({ avatarUrl: path });
+      }
+
+      return { userId };
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      navigate('/pending-approval');
+    },
+    onError: () => {
+      setUploadProgress(null);
+    },
+  });
 
   const { data: interests = [] } = useQuery({
     queryKey: ['interests'],
@@ -38,13 +76,56 @@ export function RegisterPage() {
     );
   };
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Please select an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('File size must be less than 5MB');
+      return;
+    }
+
+    setUploadError(null);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setOriginalImageSrc(reader.result as string);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    const croppedFile = new File([croppedBlob], 'avatar.png', { type: croppedBlob.type });
+    setAvatarFile(croppedFile);
+    setAvatarPreview(URL.createObjectURL(croppedBlob));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const clearAvatar = () => {
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setUploadError(null);
     register.mutate({
       ...form,
       interestIds: selectedInterests,
       position: form.position || undefined,
       shortDescription: form.shortDescription || undefined,
+      avatarFile,
     });
   };
 
@@ -135,6 +216,67 @@ export function RegisterPage() {
               </div>
             </div>
 
+            <div className="space-y-3">
+              <Label>Avatar (optional)</Label>
+              <div className="flex items-start gap-4">
+                <div className="relative">
+                  {avatarPreview ? (
+                    <div className="relative">
+                      <img
+                        src={avatarPreview}
+                        alt="Avatar preview"
+                        className="w-20 h-20 rounded-full object-cover border border-border"
+                      />
+                      <button
+                        type="button"
+                        onClick={clearAvatar}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-muted border border-dashed border-border flex items-center justify-center">
+                      <Upload className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                    id="avatar-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Choose image
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    JPG, PNG, GIF or WebP. Max 5MB.
+                  </p>
+                  {uploadProgress !== null && (
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
+                  {uploadError && (
+                    <p className="text-xs text-destructive">{uploadError}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -209,9 +351,14 @@ export function RegisterPage() {
             <Button
               type="submit"
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-              disabled={register.isPending || selectedInterests.length === 0}
+              disabled={register.isPending || selectedInterests.length === 0 || uploadProgress !== null}
             >
-              {register.isPending ? (
+              {uploadProgress !== null ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Uploading avatar... {uploadProgress}%
+                </>
+              ) : register.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Submitting...
@@ -230,6 +377,13 @@ export function RegisterPage() {
           </p>
         </div>
       </div>
+
+      <AvatarCropModal
+        open={cropModalOpen}
+        onOpenChange={setCropModalOpen}
+        imageSrc={originalImageSrc}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 }
