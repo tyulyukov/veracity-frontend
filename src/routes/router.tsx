@@ -10,6 +10,8 @@ import { ResetPasswordPage } from '@/pages/auth/reset-password';
 import { PendingApprovalPage } from '@/pages/auth/pending-approval';
 import { AccountInactivePage } from '@/pages/auth/account-inactive';
 import { FeedPage } from '@/pages/platform/feed';
+import { MyPostsPage } from '@/pages/platform/my-posts';
+import { PostDetailPage } from '@/pages/platform/post-detail';
 import { MembersPage } from '@/pages/platform/members';
 import { MemberProfilePage } from '@/pages/platform/member-profile';
 import { ProfilePage } from '@/pages/platform/profile';
@@ -75,6 +77,18 @@ export const router = createBrowserRouter([
           {
             index: true,
             element: <FeedPage />,
+          },
+          {
+            path: 'feed',
+            element: <FeedPage />,
+          },
+          {
+            path: 'posts/:postId',
+            element: <PostDetailPage />,
+          },
+          {
+            path: 'my-posts',
+            element: <MyPostsPage />,
           },
           {
             path: 'members',

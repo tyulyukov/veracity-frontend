@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
@@ -11,53 +11,62 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ApiClientError } from '@/api/client';
 import { Avatar } from '@/components/ui/avatar';
+import { AvatarCropModal } from '@/components/avatar-crop-modal';
 import { ArrowLeft, Loader2, Upload, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getFullStorageUrl } from '@/lib/storage';
-import type { UpdateProfilePayload } from '@/types';
+import type { UpdateProfilePayload, User } from '@/types';
 
 export function EditProfilePage() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { user, setUser, isLoading } = useAuthStore();
 
+  if (isLoading || !user) {
+    return (
+      <div className="max-w-2xl mx-auto flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return <EditProfileForm user={user} setUser={setUser} />;
+}
+
+interface EditProfileFormProps {
+  user: User;
+  setUser: (user: User) => void;
+}
+
+function EditProfileForm({ user, setUser }: EditProfileFormProps) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
-    avatarUrl: '',
-    position: '',
-    shortDescription: '',
+    firstName: user.firstName,
+    lastName: user.lastName,
+    avatarUrl: user.avatarUrl || '',
+    position: user.position || '',
+    shortDescription: user.shortDescription || '',
   });
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [contactInfo, setContactInfo] = useState<{ key: string; value: string }[]>([]);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>(
+    user.interests.map((i) => i.id)
+  );
+  const [contactInfo, setContactInfo] = useState<{ key: string; value: string }[]>(
+    user.contactInfo
+      ? Object.entries(user.contactInfo).map(([key, value]) => ({ key, value }))
+      : []
+  );
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [originalImageSrc, setOriginalImageSrc] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: interests = [] } = useQuery({
     queryKey: ['interests'],
     queryFn: getInterests,
   });
-
-  useEffect(() => {
-    if (user) {
-      setForm({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        avatarUrl: user.avatarUrl || '',
-        position: user.position || '',
-        shortDescription: user.shortDescription || '',
-      });
-      setSelectedInterests(user.interests.map((i) => i.id));
-      if (user.contactInfo) {
-        setContactInfo(
-          Object.entries(user.contactInfo).map(([key, value]) => ({ key, value }))
-        );
-      }
-    }
-  }, [user]);
 
   const updateMutation = useMutation({
     mutationFn: (payload: UpdateProfilePayload) => updateMe(payload),
@@ -107,8 +116,22 @@ export function EditProfilePage() {
     }
 
     setUploadError(null);
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setOriginalImageSrc(reader.result as string);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    const croppedFile = new File([croppedBlob], 'avatar.png', { type: croppedBlob.type });
+    setAvatarFile(croppedFile);
+    setAvatarPreview(URL.createObjectURL(croppedBlob));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const clearAvatar = () => {
@@ -172,14 +195,6 @@ export function EditProfilePage() {
     updateMutation.error instanceof ApiClientError
       ? updateMutation.error.message
       : updateMutation.error?.message;
-
-  if (isLoading || !user) {
-    return (
-      <div className="max-w-2xl mx-auto flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -249,7 +264,7 @@ export function EditProfilePage() {
                       src={getFullStorageUrl(form.avatarUrl)}
                       firstName={form.firstName || 'U'}
                       lastName={form.lastName || 'U'}
-                      seed={user?.id}
+                      seed={user.id}
                       size="xl"
                       className="border border-border w-24 h-24"
                     />
@@ -416,6 +431,13 @@ export function EditProfilePage() {
           </div>
         </form>
       </div>
+
+      <AvatarCropModal
+        open={cropModalOpen}
+        onOpenChange={setCropModalOpen}
+        imageSrc={originalImageSrc}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 }

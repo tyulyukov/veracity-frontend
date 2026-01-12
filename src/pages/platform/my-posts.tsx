@@ -1,37 +1,19 @@
-import { Link, useNavigate } from 'react-router';
 import { useEffect, useRef, useState } from 'react';
-import { useAuthStore } from '@/stores/auth.store';
-import { useMyPosts, useUpdatePost, useDeletePost } from '@/hooks/use-posts';
+import { Loader2, FileText, Edit } from 'lucide-react';
+import { useMyPosts, useUpdatePost } from '@/hooks/use-posts';
 import { CreatePostForm } from '@/components/create-post-form';
-import { ImageGallery } from '@/components/image-gallery';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar } from '@/components/ui/avatar';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Edit, Mail, Calendar, Briefcase, Users, Heart, MessageCircle, Loader2, X, Image as ImageIcon, MoreHorizontal, Eye, Trash2 } from 'lucide-react';
 import { getFullStorageUrl } from '@/lib/storage';
+import { useAuthStore } from '@/stores/auth.store';
+import type { MyPost, UpdatePostPayload } from '@/types';
+import { Avatar } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Heart, MessageCircle, X, Image as ImageIcon } from 'lucide-react';
 import { uploadFile } from '@/api/storage.api';
 import { toast } from 'sonner';
-import type { MyPost, UpdatePostPayload } from '@/types';
 import { cn } from '@/lib/utils';
 
-export function ProfilePage() {
+export function MyPostsPage() {
   const { user } = useAuthStore();
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMyPosts();
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -60,129 +42,36 @@ export function ProfilePage() {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (!user) return null;
-
-  const joinDate = new Date(user.createdAt).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="bg-card border border-border rounded-xl overflow-hidden mb-8">
-        <div className="h-32 bg-gradient-to-r from-primary/20 to-primary/5" />
-
-        <div className="px-8 pb-8">
-          <div className="flex flex-col sm:flex-row sm:items-end gap-6 -mt-12 mb-8">
-            <Avatar
-              src={getFullStorageUrl(user.avatarUrl)}
-              firstName={user.firstName}
-              lastName={user.lastName}
-              seed={user.id}
-              size="xl"
-              className="border-4 border-card"
-            />
-
-            <div className="flex-1">
-              <h1 className="font-display text-2xl font-bold text-foreground">
-                {user.firstName} {user.lastName}
-              </h1>
-              {user.position && (
-                <p className="text-muted-foreground">{user.position}</p>
-              )}
-            </div>
-
-            <Link to="/app/profile/edit">
-              <Button variant="outline">
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Profile
-              </Button>
-            </Link>
-          </div>
-
-          {user.shortDescription && (
-            <div className="mb-8">
-              <h3 className="text-sm font-medium text-foreground mb-2">About</h3>
-              <p className="text-muted-foreground">{user.shortDescription}</p>
-            </div>
-          )}
-
-          <div className="grid sm:grid-cols-2 gap-6 mb-8">
-            <Link
-              to="/app/profile/connections"
-              className="flex items-center gap-3 text-sm hover:text-primary transition-colors"
-            >
-              <Users className="w-5 h-5 text-muted-foreground" />
-              <span className="text-foreground hover:text-primary">
-                {user.totalConnections} {user.totalConnections === 1 ? 'connection' : 'connections'}
-              </span>
-            </Link>
-            <div className="flex items-center gap-3 text-sm">
-              <Mail className="w-5 h-5 text-muted-foreground" />
-              <span className="text-foreground">{user.email}</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm">
-              <Calendar className="w-5 h-5 text-muted-foreground" />
-              <span className="text-foreground">Joined {joinDate}</span>
-            </div>
-            {user.position && (
-              <div className="flex items-center gap-3 text-sm">
-                <Briefcase className="w-5 h-5 text-muted-foreground" />
-                <span className="text-foreground">{user.position}</span>
-              </div>
-            )}
-          </div>
-
-          {user.contactInfo && Object.keys(user.contactInfo).length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-sm font-medium text-foreground mb-3">Contact Info</h3>
-              <div className="space-y-2">
-                {Object.entries(user.contactInfo).map(([key, value]) => (
-                  <div key={key} className="flex items-center gap-2 text-sm">
-                    <span className="text-muted-foreground capitalize">{key}:</span>
-                    <span className="text-foreground">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {user.interests.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-foreground mb-3">Interests</h3>
-              <div className="flex flex-wrap gap-2">
-                {user.interests.map((interest) => (
-                  <Badge key={interest.id} variant="secondary">
-                    {interest.name}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+    <div className="max-w-2xl mx-auto">
+      <div className="mb-8">
+        <h1 className="font-display text-3xl font-bold text-foreground mb-2">My Posts</h1>
+        <p className="text-muted-foreground">Manage your posts</p>
       </div>
 
       <div className="space-y-6">
-        <h2 className="font-display text-2xl font-bold text-foreground">My Posts</h2>
-
         <CreatePostForm />
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
-          </div>
-        ) : allPosts.length === 0 ? (
+        {allPosts.length === 0 ? (
           <div className="bg-card border border-border rounded-xl p-12 text-center">
-            <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="font-semibold text-foreground mb-2">No posts yet</h3>
             <p className="text-muted-foreground">
-              Create your first post above!
+              Create your first post to share with your connections!
             </p>
           </div>
         ) : (
           <>
             {allPosts.map((post) => (
-              <MyPostCard key={post.id} post={post} user={user} />
+              <MyPostCard key={post.id} post={post} user={user!} />
             ))}
 
             <div ref={observerTarget} className="py-4">
@@ -211,34 +100,14 @@ interface MyPostCardProps {
 }
 
 function MyPostCard({ post, user }: MyPostCardProps) {
-  const navigate = useNavigate();
   const updateMutation = useUpdatePost();
-  const deleteMutation = useDeletePost();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(post.text);
   const [editImages, setEditImages] = useState(post.imageUrls);
   const [uploadingImages, setUploadingImages] = useState(false);
-  const [galleryOpen, setGalleryOpen] = useState(false);
-  const [galleryIndex, setGalleryIndex] = useState(0);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const createdAt = new Date(post.createdAt);
   const timeAgo = getTimeAgo(createdAt);
-
-  const handleImageClick = (index: number) => {
-    setGalleryIndex(index);
-    setGalleryOpen(true);
-  };
-
-  const handleDelete = () => {
-    deleteMutation.mutate(post.id, {
-      onSuccess: () => {
-        setDeleteDialogOpen(false);
-      },
-    });
-  };
-
-  const galleryImages = post.imageUrls.map((url) => getFullStorageUrl(url) || '');
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -312,30 +181,10 @@ function MyPostCard({ post, user }: MyPostCardProps) {
         </div>
 
         {!isEditing && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => navigate(`/app/posts/${post.id}`)}>
-                <Eye className="w-4 h-4 mr-2" />
-                View
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                <Edit className="w-4 h-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setDeleteDialogOpen(true)}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+            <Edit className="w-4 h-4 mr-2" />
+            Edit
+          </Button>
         )}
       </div>
 
@@ -460,9 +309,8 @@ function MyPostCard({ post, user }: MyPostCardProps) {
               {post.imageUrls.map((imageUrl, index) => (
                 <div
                   key={imageUrl}
-                  onClick={() => handleImageClick(index)}
                   className={cn(
-                    'relative rounded-lg overflow-hidden bg-muted cursor-pointer group',
+                    'relative rounded-lg overflow-hidden bg-muted',
                     post.imageUrls.length === 3 && index === 0 && 'col-span-2',
                     post.imageUrls.length === 1 && 'aspect-video',
                     post.imageUrls.length > 1 && 'aspect-square',
@@ -471,7 +319,7 @@ function MyPostCard({ post, user }: MyPostCardProps) {
                   <img
                     src={getFullStorageUrl(imageUrl) || ''}
                     alt=""
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    className="w-full h-full object-cover"
                   />
                 </div>
               ))}
@@ -490,41 +338,6 @@ function MyPostCard({ post, user }: MyPostCardProps) {
           </div>
         </>
       )}
-
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete post?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this post? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <ImageGallery
-        images={galleryImages}
-        initialIndex={galleryIndex}
-        isOpen={galleryOpen}
-        onClose={() => setGalleryOpen(false)}
-      />
     </div>
   );
 }
@@ -544,4 +357,3 @@ function getTimeAgo(date: Date): string {
     year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
   });
 }
-

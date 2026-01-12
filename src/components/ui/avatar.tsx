@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const GRADIENTS = [
@@ -53,11 +53,6 @@ export function Avatar({
   const gradientSeed = seed || `${firstName}${lastName}`;
   const gradient = GRADIENTS[getGradientIndex(gradientSeed)];
 
-  useEffect(() => {
-    setImageLoaded(false);
-    setImageError(false);
-  }, [src]);
-
   const showFallback = !src || imageError || !imageLoaded;
 
   return (
@@ -75,6 +70,7 @@ export function Avatar({
 
       {src && !imageError && (
         <img
+          key={src}
           src={src}
           alt={`${firstName} ${lastName}`}
           onLoad={() => setImageLoaded(true)}

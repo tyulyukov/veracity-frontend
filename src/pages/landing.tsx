@@ -1,8 +1,19 @@
 import { Link } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { Shield, Users, Calendar, ArrowRight, Sparkles } from 'lucide-react';
+import { useMemo } from 'react';
+
+function markVisited(): void {
+  if (typeof window === 'undefined') return;
+  const hasVisited = sessionStorage.getItem('landing-visited');
+  if (!hasVisited) {
+    sessionStorage.setItem('landing-visited', 'true');
+  }
+}
 
 export function LandingPage() {
+  useMemo(() => markVisited(), []);
+
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background pointer-events-none" />

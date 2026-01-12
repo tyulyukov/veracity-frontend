@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { MultiImageUpload } from '@/components/multi-image-upload';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import type { EventResponse } from '@/types';
 
 export function AddEventImagesPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -13,10 +14,7 @@ export function AddEventImagesPage() {
   const location = useLocation();
   const { user } = useAuthStore();
 
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-
   const { data: event, isLoading, isError } = useMyEvent(eventId!);
-  const updateMutation = useUpdateEvent();
 
   const isNewEvent = location.state?.newEvent;
 
@@ -26,12 +24,6 @@ export function AddEventImagesPage() {
       navigate('/app/events');
     }
   }, [user, navigate]);
-
-  useEffect(() => {
-    if (event && event.imageUrls) {
-      setImageUrls(event.imageUrls);
-    }
-  }, [event]);
 
   if (user?.role !== 'speaker') {
     return null;
@@ -61,6 +53,26 @@ export function AddEventImagesPage() {
     );
   }
 
+  return (
+    <AddEventImagesForm
+      event={event}
+      eventId={eventId!}
+      isNewEvent={isNewEvent}
+    />
+  );
+}
+
+interface AddEventImagesFormProps {
+  event: EventResponse;
+  eventId: string;
+  isNewEvent: boolean;
+}
+
+function AddEventImagesForm({ event, eventId, isNewEvent }: AddEventImagesFormProps) {
+  const navigate = useNavigate();
+  const updateMutation = useUpdateEvent();
+  const [imageUrls, setImageUrls] = useState<string[]>(event.imageUrls);
+
   const handleFinish = () => {
     if (imageUrls.length === 0) {
       navigate(`/app/events/${eventId}`);
@@ -69,7 +81,7 @@ export function AddEventImagesPage() {
 
     updateMutation.mutate(
       {
-        eventId: eventId!,
+        eventId,
         payload: { imageUrls },
       },
       {
@@ -123,7 +135,7 @@ export function AddEventImagesPage() {
 
       <div className="bg-card border border-border rounded-xl p-6 mb-6">
         <MultiImageUpload
-          eventId={eventId!}
+          eventId={eventId}
           images={imageUrls}
           onChange={setImageUrls}
           maxImages={5}

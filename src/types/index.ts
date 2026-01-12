@@ -106,8 +106,8 @@ export interface ApiError {
   statusCode: number;
 }
 
-export type StorageEntity = 'users' | 'events';
-export type StorageField = 'avatar' | 'event_image';
+export type StorageEntity = 'users' | 'events' | 'posts';
+export type StorageField = 'avatar' | 'event_image' | 'post_image';
 
 export interface UploadFileResponse {
   path: string;
@@ -194,6 +194,81 @@ export interface PaginatedEventsResponse {
 
 export interface PaginatedParticipantsResponse {
   participants: EventParticipant[];
+  nextCursor: string | null;
+}
+
+export interface PostAuthor {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  role: UserRole;
+}
+
+export interface Post {
+  id: string;
+  text: string;
+  imageUrls: string[];
+  likeCount: number;
+  commentCount: number;
+  isLikedByCurrentUser: boolean;
+  createdAt: string;
+  author: PostAuthor;
+}
+
+export interface MyPost {
+  id: string;
+  text: string;
+  imageUrls: string[];
+  likeCount: number;
+  commentCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Comment {
+  id: string;
+  postId: string;
+  text: string;
+  createdAt: string;
+  author: PostAuthor;
+}
+
+export interface CreatePostPayload {
+  text?: string;
+  imageUrls?: string[];
+}
+
+export interface UpdatePostPayload {
+  text?: string;
+  imageUrls?: string[];
+}
+
+export interface CreateCommentPayload {
+  text: string;
+}
+
+export interface UpdateCommentPayload {
+  text: string;
+}
+
+export interface PostsQueryParams {
+  cursor?: string;
+  limit?: number;
+}
+
+export interface PaginatedPostsResponse {
+  posts: Post[];
+  nextCursor: string | null;
+}
+
+export interface PaginatedMyPostsResponse {
+  posts: MyPost[];
+  nextCursor: string | null;
+}
+
+export interface PaginatedCommentsResponse {
+  comments: Comment[];
   nextCursor: string | null;
 }
 

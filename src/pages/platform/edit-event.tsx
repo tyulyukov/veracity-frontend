@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import type { EventResponse } from '@/types';
 
 export function EditEventPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -16,18 +17,6 @@ export function EditEventPage() {
   const { user } = useAuthStore();
 
   const { data, isLoading, isError } = useMyEvent(eventId!);
-  const updateMutation = useUpdateEvent();
-
-  const [name, setName] = useState('');
-  const [isOnline, setIsOnline] = useState(true);
-  const [eventDate, setEventDate] = useState('');
-  const [eventTime, setEventTime] = useState('');
-  const [location, setLocation] = useState('');
-  const [link, setLink] = useState('');
-  const [description, setDescription] = useState('');
-  const [tags, setTags] = useState('');
-  const [limitParticipants, setLimitParticipants] = useState('');
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   useEffect(() => {
     if (user && user.role !== 'speaker') {
@@ -35,25 +24,6 @@ export function EditEventPage() {
       navigate('/app/events');
     }
   }, [user, navigate]);
-
-  useEffect(() => {
-    if (data) {
-      setName(data.name);
-      setIsOnline(data.isOnline);
-      setLocation(data.location || '');
-      setLink(data.link || '');
-      setDescription(data.description || '');
-      setTags(data.tags.join(', '));
-      setLimitParticipants(data.limitParticipants?.toString() || '');
-      setImageUrls(data.imageUrls);
-
-      const date = new Date(data.eventDate);
-      const dateString = date.toISOString().split('T')[0];
-      const timeString = date.toTimeString().substring(0, 5);
-      setEventDate(dateString);
-      setEventTime(timeString);
-    }
-  }, [data]);
 
   if (user?.role !== 'speaker') {
     return null;
@@ -83,6 +53,33 @@ export function EditEventPage() {
     );
   }
 
+  return <EditEventForm event={data} eventId={eventId!} />;
+}
+
+interface EditEventFormProps {
+  event: EventResponse;
+  eventId: string;
+}
+
+function EditEventForm({ event, eventId }: EditEventFormProps) {
+  const navigate = useNavigate();
+  const updateMutation = useUpdateEvent();
+
+  const initialDate = new Date(event.eventDate);
+  const initialDateString = initialDate.toISOString().split('T')[0];
+  const initialTimeString = initialDate.toTimeString().substring(0, 5);
+
+  const [name, setName] = useState(event.name);
+  const [isOnline, setIsOnline] = useState(event.isOnline);
+  const [eventDate, setEventDate] = useState(initialDateString);
+  const [eventTime, setEventTime] = useState(initialTimeString);
+  const [location, setLocation] = useState(event.location || '');
+  const [link, setLink] = useState(event.link || '');
+  const [description, setDescription] = useState(event.description || '');
+  const [tags, setTags] = useState(event.tags.join(', '));
+  const [limitParticipants, setLimitParticipants] = useState(event.limitParticipants?.toString() || '');
+  const [imageUrls, setImageUrls] = useState<string[]>(event.imageUrls);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -111,9 +108,9 @@ export function EditEventPage() {
       return;
     }
 
-    if (limitParticipants && parseInt(limitParticipants) < data.participantCount) {
+    if (limitParticipants && parseInt(limitParticipants) < event.participantCount) {
       toast.error(
-        `Participant limit cannot be less than current participant count (${data.participantCount})`,
+        `Participant limit cannot be less than current participant count (${event.participantCount})`,
       );
       return;
     }
@@ -131,7 +128,7 @@ export function EditEventPage() {
 
     updateMutation.mutate(
       {
-        eventId: eventId!,
+        eventId,
         payload: {
           name: name.trim(),
           isOnline,
@@ -258,13 +255,13 @@ export function EditEventPage() {
             <Input
               id="limitParticipants"
               type="number"
-              min={data.participantCount}
+              min={event.participantCount}
               value={limitParticipants}
               onChange={(e) => setLimitParticipants(e.target.value)}
               placeholder="Leave empty for unlimited"
             />
             <p className="text-xs text-muted-foreground">
-              Current participants: {data.participantCount}. Limit must be greater than or equal to
+              Current participants: {event.participantCount}. Limit must be greater than or equal to
               current participant count.
             </p>
           </div>
@@ -294,7 +291,7 @@ export function EditEventPage() {
           <div className="space-y-2">
             <Label>Event Images (optional)</Label>
             <MultiImageUpload
-              eventId={eventId!}
+              eventId={eventId}
               images={imageUrls}
               onChange={setImageUrls}
               maxImages={5}
