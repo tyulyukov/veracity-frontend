@@ -126,7 +126,7 @@ function EditProfileForm({ user, setUser }: EditProfileFormProps) {
   };
 
   const handleCropComplete = (croppedBlob: Blob) => {
-    const croppedFile = new File([croppedBlob], 'avatar.png', { type: croppedBlob.type });
+    const croppedFile = new File([croppedBlob], 'avatar.jpg', { type: croppedBlob.type });
     setAvatarFile(croppedFile);
     setAvatarPreview(URL.createObjectURL(croppedBlob));
     if (fileInputRef.current) {
