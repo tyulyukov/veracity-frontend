@@ -6,6 +6,7 @@ import type {
   UpdatePostPayload,
   Post,
   PaginatedPostsResponse,
+  PaginatedMyPostsResponse,
   CreateCommentPayload,
   UpdateCommentPayload,
 } from '@/types';
@@ -121,12 +122,17 @@ export function useLikePost() {
     mutationFn: (postId: string) => postsApi.likePost(postId),
     onMutate: async (postId) => {
       await queryClient.cancelQueries({ queryKey: ['posts', 'feed'] });
+      await queryClient.cancelQueries({ queryKey: ['posts', 'my'] });
       await queryClient.cancelQueries({ queryKey: ['posts', postId] });
       await queryClient.cancelQueries({ queryKey: ['posts', 'user'], exact: false });
 
       const previousFeed = queryClient.getQueryData<{ pages: PaginatedPostsResponse[] }>([
         'posts',
         'feed',
+      ]);
+      const previousMyPosts = queryClient.getQueryData<{ pages: PaginatedMyPostsResponse[] }>([
+        'posts',
+        'my',
       ]);
       const previousPost = queryClient.getQueryData<Post>(['posts', postId]);
       const previousUserPosts = new Map<string, { pages: PaginatedPostsResponse[] }>();
@@ -138,6 +144,21 @@ export function useLikePost() {
       });
 
       queryClient.setQueryData<{ pages: PaginatedPostsResponse[] }>(['posts', 'feed'], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            posts: page.posts.map((post) =>
+              post.id === postId
+                ? { ...post, isLikedByCurrentUser: true, likeCount: post.likeCount + 1 }
+                : post,
+            ),
+          })),
+        };
+      });
+
+      queryClient.setQueryData<{ pages: PaginatedMyPostsResponse[] }>(['posts', 'my'], (old) => {
         if (!old) return old;
         return {
           ...old,
@@ -172,11 +193,14 @@ export function useLikePost() {
         };
       });
 
-      return { previousFeed, previousPost, previousUserPosts };
+      return { previousFeed, previousMyPosts, previousPost, previousUserPosts };
     },
     onError: (error, postId, context) => {
       if (context?.previousFeed) {
         queryClient.setQueryData(['posts', 'feed'], context.previousFeed);
+      }
+      if (context?.previousMyPosts) {
+        queryClient.setQueryData(['posts', 'my'], context.previousMyPosts);
       }
       if (context?.previousPost) {
         queryClient.setQueryData(['posts', postId], context.previousPost);
@@ -200,12 +224,17 @@ export function useUnlikePost() {
     mutationFn: (postId: string) => postsApi.unlikePost(postId),
     onMutate: async (postId) => {
       await queryClient.cancelQueries({ queryKey: ['posts', 'feed'] });
+      await queryClient.cancelQueries({ queryKey: ['posts', 'my'] });
       await queryClient.cancelQueries({ queryKey: ['posts', postId] });
       await queryClient.cancelQueries({ queryKey: ['posts', 'user'], exact: false });
 
       const previousFeed = queryClient.getQueryData<{ pages: PaginatedPostsResponse[] }>([
         'posts',
         'feed',
+      ]);
+      const previousMyPosts = queryClient.getQueryData<{ pages: PaginatedMyPostsResponse[] }>([
+        'posts',
+        'my',
       ]);
       const previousPost = queryClient.getQueryData<Post>(['posts', postId]);
       const previousUserPosts = new Map<string, { pages: PaginatedPostsResponse[] }>();
@@ -217,6 +246,21 @@ export function useUnlikePost() {
       });
 
       queryClient.setQueryData<{ pages: PaginatedPostsResponse[] }>(['posts', 'feed'], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            posts: page.posts.map((post) =>
+              post.id === postId
+                ? { ...post, isLikedByCurrentUser: false, likeCount: post.likeCount - 1 }
+                : post,
+            ),
+          })),
+        };
+      });
+
+      queryClient.setQueryData<{ pages: PaginatedMyPostsResponse[] }>(['posts', 'my'], (old) => {
         if (!old) return old;
         return {
           ...old,
@@ -251,11 +295,14 @@ export function useUnlikePost() {
         };
       });
 
-      return { previousFeed, previousPost, previousUserPosts };
+      return { previousFeed, previousMyPosts, previousPost, previousUserPosts };
     },
     onError: (error, postId, context) => {
       if (context?.previousFeed) {
         queryClient.setQueryData(['posts', 'feed'], context.previousFeed);
+      }
+      if (context?.previousMyPosts) {
+        queryClient.setQueryData(['posts', 'my'], context.previousMyPosts);
       }
       if (context?.previousPost) {
         queryClient.setQueryData(['posts', postId], context.previousPost);
