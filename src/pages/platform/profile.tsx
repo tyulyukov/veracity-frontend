@@ -103,7 +103,7 @@ export function ProfilePage() {
           {user.shortDescription && (
             <div className="mb-8">
               <h3 className="text-sm font-medium text-foreground mb-2">About</h3>
-              <p className="text-muted-foreground">{user.shortDescription}</p>
+              <p className="text-muted-foreground whitespace-pre-wrap">{user.shortDescription}</p>
             </div>
           )}
 
