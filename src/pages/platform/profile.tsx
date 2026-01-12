@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router';
 import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
-import { useMyPosts, useUpdatePost, useDeletePost } from '@/hooks/use-posts';
+import { useUserPosts, useUpdatePost, useDeletePost, useLikePost, useUnlikePost } from '@/hooks/use-posts';
 import { CreatePostForm } from '@/components/create-post-form';
 import { ImageGallery } from '@/components/image-gallery';
 import { Button } from '@/components/ui/button';
@@ -28,12 +28,12 @@ import { Edit, Mail, Calendar, Briefcase, Users, Heart, MessageCircle, Loader2, 
 import { getFullStorageUrl } from '@/lib/storage';
 import { uploadFile } from '@/api/storage.api';
 import { toast } from 'sonner';
-import type { MyPost, UpdatePostPayload } from '@/types';
+import type { Post, UpdatePostPayload } from '@/types';
 import { cn } from '@/lib/utils';
 
 export function ProfilePage() {
   const { user } = useAuthStore();
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMyPosts();
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useUserPosts(user?.id ?? '');
   const observerTarget = useRef<HTMLDivElement>(null);
 
   const allPosts = data?.pages.flatMap((page) => page.posts) ?? [];
@@ -182,7 +182,7 @@ export function ProfilePage() {
         ) : (
           <>
             {allPosts.map((post) => (
-              <MyPostCard key={post.id} post={post} user={user} />
+              <MyPostCard key={post.id} post={post} />
             ))}
 
             <div ref={observerTarget} className="py-4">
@@ -206,14 +206,15 @@ export function ProfilePage() {
 }
 
 interface MyPostCardProps {
-  post: MyPost;
-  user: { id: string; firstName: string; lastName: string; avatarUrl: string | null };
+  post: Post;
 }
 
-function MyPostCard({ post, user }: MyPostCardProps) {
+function MyPostCard({ post }: MyPostCardProps) {
   const navigate = useNavigate();
   const updateMutation = useUpdatePost();
   const deleteMutation = useDeletePost();
+  const likeMutation = useLikePost();
+  const unlikeMutation = useUnlikePost();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(post.text);
   const [editImages, setEditImages] = useState(post.imageUrls);
@@ -236,6 +237,14 @@ function MyPostCard({ post, user }: MyPostCardProps) {
         setDeleteDialogOpen(false);
       },
     });
+  };
+
+  const handleLike = () => {
+    if (post.isLikedByCurrentUser) {
+      unlikeMutation.mutate(post.id);
+    } else {
+      likeMutation.mutate(post.id);
+    }
   };
 
   const galleryImages = post.imageUrls.map((url) => getFullStorageUrl(url) || '');
@@ -297,15 +306,15 @@ function MyPostCard({ post, user }: MyPostCardProps) {
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <Avatar
-            src={getFullStorageUrl(user.avatarUrl)}
-            firstName={user.firstName}
-            lastName={user.lastName}
-            seed={user.id}
+            src={getFullStorageUrl(post.author.avatarUrl)}
+            firstName={post.author.firstName}
+            lastName={post.author.lastName}
+            seed={post.author.id}
             size="md"
           />
           <div>
             <p className="font-semibold text-foreground">
-              {user.firstName} {user.lastName}
+              {post.author.firstName} {post.author.lastName}
             </p>
             <p className="text-xs text-muted-foreground">{timeAgo}</p>
           </div>
@@ -479,14 +488,29 @@ function MyPostCard({ post, user }: MyPostCardProps) {
           )}
 
           <div className="flex items-center gap-4 pt-3 border-t border-border">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Heart className="w-5 h-5" />
+            <button
+              type="button"
+              onClick={handleLike}
+              className={cn(
+                'flex items-center gap-2 text-sm transition-colors cursor-pointer',
+                post.isLikedByCurrentUser
+                  ? 'text-destructive hover:text-destructive/80'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+              disabled={likeMutation.isPending || unlikeMutation.isPending}
+            >
+              <Heart
+                className={cn('w-5 h-5', post.isLikedByCurrentUser && 'fill-current')}
+              />
               <span>{post.likeCount}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            </button>
+            <Link
+              to={`/app/posts/${post.id}`}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
               <MessageCircle className="w-5 h-5" />
               <span>{post.commentCount}</span>
-            </div>
+            </Link>
           </div>
         </>
       )}

@@ -122,12 +122,20 @@ export function useLikePost() {
     onMutate: async (postId) => {
       await queryClient.cancelQueries({ queryKey: ['posts', 'feed'] });
       await queryClient.cancelQueries({ queryKey: ['posts', postId] });
+      await queryClient.cancelQueries({ queryKey: ['posts', 'user'], exact: false });
 
       const previousFeed = queryClient.getQueryData<{ pages: PaginatedPostsResponse[] }>([
         'posts',
         'feed',
       ]);
       const previousPost = queryClient.getQueryData<Post>(['posts', postId]);
+      const previousUserPosts = new Map<string, { pages: PaginatedPostsResponse[] }>();
+
+      queryClient.getQueriesData<{ pages: PaginatedPostsResponse[] }>({ queryKey: ['posts', 'user'] }).forEach(([key, data]) => {
+        if (data) {
+          previousUserPosts.set(JSON.stringify(key), data);
+        }
+      });
 
       queryClient.setQueryData<{ pages: PaginatedPostsResponse[] }>(['posts', 'feed'], (old) => {
         if (!old) return old;
@@ -149,7 +157,22 @@ export function useLikePost() {
         return { ...old, isLikedByCurrentUser: true, likeCount: old.likeCount + 1 };
       });
 
-      return { previousFeed, previousPost };
+      queryClient.setQueriesData<{ pages: PaginatedPostsResponse[] }>({ queryKey: ['posts', 'user'] }, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            posts: page.posts.map((post) =>
+              post.id === postId
+                ? { ...post, isLikedByCurrentUser: true, likeCount: post.likeCount + 1 }
+                : post,
+            ),
+          })),
+        };
+      });
+
+      return { previousFeed, previousPost, previousUserPosts };
     },
     onError: (error, postId, context) => {
       if (context?.previousFeed) {
@@ -157,6 +180,11 @@ export function useLikePost() {
       }
       if (context?.previousPost) {
         queryClient.setQueryData(['posts', postId], context.previousPost);
+      }
+      if (context?.previousUserPosts) {
+        context.previousUserPosts.forEach((data, key) => {
+          queryClient.setQueryData(JSON.parse(key), data);
+        });
       }
       const errorMessage =
         error instanceof Error && 'message' in error ? error.message : 'Failed to like post';
@@ -173,12 +201,20 @@ export function useUnlikePost() {
     onMutate: async (postId) => {
       await queryClient.cancelQueries({ queryKey: ['posts', 'feed'] });
       await queryClient.cancelQueries({ queryKey: ['posts', postId] });
+      await queryClient.cancelQueries({ queryKey: ['posts', 'user'], exact: false });
 
       const previousFeed = queryClient.getQueryData<{ pages: PaginatedPostsResponse[] }>([
         'posts',
         'feed',
       ]);
       const previousPost = queryClient.getQueryData<Post>(['posts', postId]);
+      const previousUserPosts = new Map<string, { pages: PaginatedPostsResponse[] }>();
+
+      queryClient.getQueriesData<{ pages: PaginatedPostsResponse[] }>({ queryKey: ['posts', 'user'] }).forEach(([key, data]) => {
+        if (data) {
+          previousUserPosts.set(JSON.stringify(key), data);
+        }
+      });
 
       queryClient.setQueryData<{ pages: PaginatedPostsResponse[] }>(['posts', 'feed'], (old) => {
         if (!old) return old;
@@ -200,7 +236,22 @@ export function useUnlikePost() {
         return { ...old, isLikedByCurrentUser: false, likeCount: old.likeCount - 1 };
       });
 
-      return { previousFeed, previousPost };
+      queryClient.setQueriesData<{ pages: PaginatedPostsResponse[] }>({ queryKey: ['posts', 'user'] }, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            posts: page.posts.map((post) =>
+              post.id === postId
+                ? { ...post, isLikedByCurrentUser: false, likeCount: post.likeCount - 1 }
+                : post,
+            ),
+          })),
+        };
+      });
+
+      return { previousFeed, previousPost, previousUserPosts };
     },
     onError: (error, postId, context) => {
       if (context?.previousFeed) {
@@ -208,6 +259,11 @@ export function useUnlikePost() {
       }
       if (context?.previousPost) {
         queryClient.setQueryData(['posts', postId], context.previousPost);
+      }
+      if (context?.previousUserPosts) {
+        context.previousUserPosts.forEach((data, key) => {
+          queryClient.setQueryData(JSON.parse(key), data);
+        });
       }
       const errorMessage =
         error instanceof Error && 'message' in error ? error.message : 'Failed to unlike post';
