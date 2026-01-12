@@ -40,6 +40,23 @@ export async function getMyPosts(params?: PostsQueryParams): Promise<PaginatedMy
   return apiGet<PaginatedMyPostsResponse>(`/posts/my${query ? `?${query}` : ''}`);
 }
 
+export async function getUserPosts(
+  userId: string,
+  params?: PostsQueryParams,
+): Promise<PaginatedPostsResponse> {
+  const searchParams = new URLSearchParams();
+
+  if (params?.cursor) {
+    searchParams.set('cursor', params.cursor);
+  }
+  if (params?.limit) {
+    searchParams.set('limit', params.limit.toString());
+  }
+
+  const query = searchParams.toString();
+  return apiGet<PaginatedPostsResponse>(`/posts/user/${userId}${query ? `?${query}` : ''}`);
+}
+
 export async function getPostById(postId: string): Promise<Post> {
   return apiGet<Post>(`/posts/${postId}`);
 }
@@ -108,6 +125,7 @@ export async function deleteComment(postId: string, commentId: string): Promise<
 export const postsApi = {
   getPostFeed,
   getMyPosts,
+  getUserPosts,
   getPostById,
   createPost,
   updatePost,

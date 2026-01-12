@@ -36,6 +36,20 @@ export function useMyPosts() {
   });
 }
 
+export function useUserPosts(userId: string) {
+  return useInfiniteQuery({
+    queryKey: ['posts', 'user', userId],
+    queryFn: ({ pageParam }) =>
+      postsApi.getUserPosts(userId, {
+        cursor: pageParam,
+        limit: 20,
+      }),
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: undefined as string | undefined,
+    enabled: !!userId,
+  });
+}
+
 export function usePost(postId: string) {
   return useQuery({
     queryKey: ['posts', postId],

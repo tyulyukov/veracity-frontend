@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { getUserById } from '@/api/users.api';
 import { useAuthStore } from '@/stores/auth.store';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,8 @@ import { ArrowLeft, Calendar, Briefcase, Loader2, Lock, Users } from 'lucide-rea
 import { getFullStorageUrl } from '@/lib/storage';
 import { ConnectionButton } from '@/components/connection-button';
 import { cn } from '@/lib/utils';
+import { useUserPosts } from '@/hooks/use-posts';
+import { PostCard } from '@/components/post-card';
 
 export function MemberProfilePage() {
   const { memberId } = useParams<{ memberId: string }>();
@@ -21,11 +23,42 @@ export function MemberProfilePage() {
     enabled: !!memberId,
   });
 
+  const isConnected = data?.isConnected ?? false;
+
+  const {
+    data: postsData,
+    isLoading: postsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useUserPosts(isConnected ? (memberId ?? '') : '');
+
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (user && memberId === user.id) {
       navigate('/app/profile', { replace: true });
     }
   }, [user, memberId, navigate]);
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const allPosts = postsData?.pages.flatMap((page) => page.posts) ?? [];
 
   if (isLoading) {
     return (
@@ -177,6 +210,36 @@ export function MemberProfilePage() {
           )}
         </div>
       </div>
+
+      {isConnected && (
+        <div className="mt-8">
+          <h2 className="font-display text-xl font-bold text-foreground mb-4">Posts</h2>
+
+          {postsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+            </div>
+          ) : allPosts.length === 0 ? (
+            <div className="bg-card border border-border rounded-xl p-8 text-center">
+              <p className="text-muted-foreground">No posts yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {allPosts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+
+              <div ref={loadMoreRef} className="h-1" />
+
+              {isFetchingNextPage && (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
